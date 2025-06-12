@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analiza Danych Zdrowotnych w Polsce</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Analiza Danych Zdrowotnych w Polsce</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Statistics Section -->
+        <div class="stats-container">
+            <h3>Kluczowe Statystyki</h3>
+            <ul class="nav nav-tabs" id="statsTabs" role="tablist">
+                {% for year in years %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if year == '2023' %}active{% endif %}"
+                            id="year-{{ year }}-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#year-{{ year }}"
+                            type="button"
+                            role="tab">
+                        {{ year }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="tab-content" id="statsTabContent">
+                {% for year in years %}
+                <div class="tab-pane fade {% if year == '2023' %}show active{% endif %}"
+                     id="year-{{ year }}"
+                     role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card stats-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Personel medyczny</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">
+                                        <strong>Łączna liczba lekarzy:</strong> {{ "{:,}".format(stats[year].total_doctors) }}<br>
+                                        <strong>Łączna liczba pielęgniarek:</strong> {{ "{:,}".format(stats[year].total_nurses) }}<br>
+                                        <strong>Średnia liczba lekarzy na województwo:</strong> {{ "{:,.1f}".format(stats[year].avg_doctors_per_region) }}<br>
+                                        <strong>Województwo z największą liczbą lekarzy:</strong> {{ stats[year].max_doctors_region }}<br>
+                                        <strong>Województwo z najmniejszą liczbą lekarzy:</strong> {{ stats[year].min_doctors_region }}<br>
+                                        <strong>Stosunek lekarz/pielęgniarka:</strong> {{ "{:.2f}".format(stats[year].doctor_nurse_ratio) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card stats-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Infrastruktura i wydatki</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">
+                                        <strong>Liczba szpitali:</strong> {{ "{:,}".format(stats[year].total_hospitals) }}<br>
+                                        <strong>Liczba łóżek szpitalnych:</strong> {{ "{:,}".format(stats[year].total_beds) }}<br>
+                                        <strong>Łóżka na 1000 mieszkańców:</strong> {{ "{:.1f}".format(stats[year].beds_per_1000) }}<br>
+                                        <strong>Wydatki na zdrowie:</strong> {{ "{:,.0f}".format(stats[year].total_expenditure) }} mln zł<br>
+                                        <strong>Wydatki na mieszkańca:</strong> {{ "{:,.0f}".format(stats[year].expenditure_per_capita) }} zł
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card stats-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Statystyki zgonów</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">
+                                        <strong>Łączna liczba zgonów:</strong> {{ "{:,}".format(stats[year].total_deaths) }}<br>
+                                        <strong>Zgony na 1000 mieszkańców:</strong> {{ "{:.1f}".format(stats[year].deaths_per_1000) }}<br>
+                                        <strong>Zgony z powodu COVID-19:</strong> {{ "{:,}".format(stats[year].covid_deaths) }}<br>
+                                        <strong>Zgony z powodu chorób układu krążenia:</strong> {{ "{:,}".format(stats[year].circulatory_deaths) }}<br>
+                                        <strong>Zgony z powodu nowotworów:</strong> {{ "{:,}".format(stats[year].cancer_deaths) }}<br>
+                                        <strong>Zgony z powodu chorób układu oddechowego:</strong> {{ "{:,}".format(stats[year].respiratory_deaths) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Doctors and Nurses Trend Chart -->
+        <div class="chart-container">
+            <div id="plot1"></div>
+        </div>
+
+        <!-- Health Indicators Chart -->
+        <div class="chart-container">
+            <div id="plot2"></div>
+        </div>
+
+        <!-- Regional Distribution Chart -->
+        <div class="chart-container">
+            <div class="year-buttons text-center">
+                {% for year in years %}
+                <button class="btn btn-primary year-btn" data-year="{{ year }}">{{ year }}</button>
+                {% endfor %}
+            </div>
+            <div id="plot3"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var plot1Data = {{ plot1 | safe }};
+        var plot2Data = {{ plot2 | safe }};
+        var plot3Data = {{ plot3 | safe }};
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 

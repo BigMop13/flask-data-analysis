@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.log
+
+# Virtual environment
+venv/
+.venv/
+
+# IDE-specific files
+.idea/
+.vscode/
+
+# Database
+*.db
+*.sqlite3
+
+# Docker-related (if any local volumes are created)
+.dockerignore 
