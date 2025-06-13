@@ -1,24 +1,53 @@
 from flask import Flask, render_template, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_required
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.utils
 import json
 from data_loader import load_all_health_data
 from analysis_utils import calculate_statistics, create_health_indicators_chart
+from models import db, User, login_manager
+from auth import auth
+import os
+import time
+from sqlalchemy.exc import OperationalError
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///health_data.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///health_data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
 
-# User model for future authentication
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+# Initialize extensions
+db.init_app(app)
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
+
+# Register blueprints
+app.register_blueprint(auth)
+
+# Create database tables with retry logic
+def init_db():
+    max_retries = 5
+    retry_delay = 2  # seconds
+    
+    for attempt in range(max_retries):
+        try:
+            with app.app_context():
+                db.create_all()
+            print("Database initialized successfully")
+            return
+        except OperationalError as e:
+            if attempt < max_retries - 1:
+                print(f"Database initialization attempt {attempt + 1} failed. Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print("Failed to initialize database after multiple attempts")
+                raise
+
+init_db()
 
 @app.route('/')
+@login_required
 def index():
     try:
         dfs = load_all_health_data()
@@ -64,6 +93,7 @@ def index():
         return f"Wystąpił błąd: {str(e)}", 500
 
 @app.route('/get_regional_data/<year>')
+@login_required
 def get_regional_data(year):
     try:
         dfs = load_all_health_data()
@@ -84,6 +114,4 @@ def get_regional_data(year):
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, host='0.0.0.0') 
