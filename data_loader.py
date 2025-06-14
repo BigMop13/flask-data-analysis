@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 
-
 def load_all_health_data():
     try:
         data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
@@ -18,21 +17,12 @@ def load_all_health_data():
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"Plik danych nie został znaleziony: {file_path}")
             
-            # Read the CSV file
             df = pd.read_csv(file_path, sep=';', encoding='utf-8', quotechar='"', dtype={'Kod': str})
             
-            # Convert numeric columns to float
             for col in df.columns:
                 if col != 'Kod' and col != 'Nazwa':
-                    # First try direct conversion
-                    try:
-                        df[col] = pd.to_numeric(df[col], errors='coerce')
-                    except:
-                        # If that fails, try replacing comma with dot first
-                        try:
-                            df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '.'), errors='coerce')
-                        except:
-                            pass # Suppress warning after removing logging
+                    df[col] = df[col].astype(str).str.replace(',', '.')
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
             
             dfs[key] = df
             

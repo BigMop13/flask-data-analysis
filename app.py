@@ -17,18 +17,15 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///health_data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize extensions
 db.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 
-# Register blueprints
 app.register_blueprint(auth)
 
-# Create database tables with retry logic
 def init_db():
     max_retries = 5
-    retry_delay = 2  # seconds
+    retry_delay = 2
     
     for attempt in range(max_retries):
         try:
@@ -53,7 +50,6 @@ def index():
         dfs = load_all_health_data()
         years = [str(year) for year in range(2017, 2024)]
         
-        # Create doctors and nurses trend chart
         poland_data = dfs['doctors'][dfs['doctors']['Kod'] == '0000000']
         doctors_data = poland_data[[f'lekarze;{year};[osoba]' for year in years]].values[0]
         nurses_data = poland_data[[f'pielęgniarki łącznie z mgr pielęgniarstwa;{year};[osoba]' for year in years]].values[0]
@@ -67,10 +63,8 @@ def index():
         fig1.data[0].name = 'Lekarze'
         fig1.data[1].name = 'Pielęgniarki'
         
-        # Create health indicators chart
         fig2 = create_health_indicators_chart(dfs)
         
-        # Create regional distribution chart for 2023
         regional_data = dfs['doctors'][dfs['doctors']['Kod'] != '0000000'].sort_values('lekarze;2023;[osoba]', ascending=False)
         fig3 = px.bar(
             regional_data,
@@ -80,7 +74,6 @@ def index():
             labels={'Nazwa': 'Województwo', 'lekarze;2023;[osoba]': 'Liczba lekarzy'}
         )
         
-        # Calculate statistics
         stats = calculate_statistics(dfs)
         
         return render_template('index.html',
